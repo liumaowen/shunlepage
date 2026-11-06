@@ -30,6 +30,10 @@
   <title>瞬乐</title>
   <link rel="manifest" href="manifest.json">
 
+  <!-- 预加载关键资源：加速首次渲染 -->
+  <link rel="preload" href="flutter_bootstrap.js" as="script">
+  <link rel="preload" href="hls.min.js" as="script">
+  <link rel="prefetch" href="assets/fonts/NotoSansSC-Regular-subset.otf" as="font" type="font/otf" crossorigin>
 
   <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
 
@@ -134,9 +138,6 @@
     <div class="loader-text">加载中...</div>
   </div>
 
-  <!-- 带版本号：flutter_bootstrap.js 是"选择 wasm 还是 js"的引导器，
-       文件名不带 hash，一旦被浏览器/边缘以 immutable 缓存，
-       发版后访客会长期停留在旧的 dart2js 构建。每次发版改一下 v= 即可。 -->
   <script src="flutter_bootstrap.js" async=""></script>
 
   <script>

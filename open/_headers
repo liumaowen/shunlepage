@@ -10,12 +10,24 @@
 /open/canvaskit/*
   Cache-Control: public, max-age=31536000, immutable
 
+# ---- 字体资源：长缓存 + CORS ----
+/open/assets/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+  Access-Control-Allow-Origin: *
+
 # ---- 第三方库与静态资源 ----
 /open/hls.min.js
   Cache-Control: public, max-age=604800
 
-/open/assets/*
+/open/assets/images/*
   Cache-Control: public, max-age=604800
+
+# ---- 延迟加载的拆分 chunk：带 hash 文件名，可长缓存 ----
+/open/*.part.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/open/*.part.js.map
+  Cache-Control: public, max-age=31536000, immutable
 
 # ---- 版本探测与 Service Worker：必须实时 ----
 /open/version.json
