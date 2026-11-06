@@ -61,20 +61,11 @@ export async function onRequest({ request, params, env }) {
   headers.set('accept', request.headers.get('accept') || '*/*');
   headers.set('accept-language', request.headers.get('accept-language') || 'zh-CN,zh;q=0.9');
 
-  // referer/origin 优先使用浏览器原始值，本地测试或无值时使用动态 refererDomain
-  const browserReferer = request.headers.get('referer');
-  const referer = browserReferer && !browserReferer.includes('127.0.0.1') 
-                 && !browserReferer.includes('localhost')
-                 && !browserReferer.includes('dpdns.org')
-    ? browserReferer
-    : `${refererDomain}/`;
+  // 始终使用默认 referer/origin 域名，因为上游有防盗链白名单
+  // 浏览器原始 referer 是代理域名（如 shunle.cc.cd），上游不认会返回 403
+  const referer = `${refererDomain}/`;
   headers.set('referer', referer);
-
-  const browserOrigin = request.headers.get('origin');
-  const origin = browserOrigin && !browserOrigin.includes('127.0.0.1') && !browserOrigin.includes('localhost')
-                   && !browserOrigin.includes('dpdns.org')
-    ? browserOrigin
-    : refererDomain;
+  const origin = refererDomain;
   headers.set('origin', origin);
 
   headers.set('user-agent', request.headers.get('user-agent') || 'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Mobile Safari/537.36');
