@@ -1,0 +1,148 @@
+<!DOCTYPE html><html><head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="/open/">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Short videos.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="shunle">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png">
+
+  <title>瞬乐</title>
+  <link rel="manifest" href="manifest.json">
+
+
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+
+  <!-- 拦截 _flutter.loader 初始化，使用本地 CanvasKit 替代 gstatic CDN -->
+  <script>
+    // 将 _flutter 定义为 getter，返回固定对象，防止 flutter_bootstrap.js 覆盖
+    Object.defineProperty(window, '_flutter', {
+      configurable: true,
+      get: function() { return this._$flutter; },
+      set: function(v) {
+        if (!this._$flutter) {
+          this._$flutter = v;
+          // 拦截 loader，替换 load() 方法以注入本地 CanvasKit 路径
+          Object.defineProperty(this._$flutter, 'loader', {
+            configurable: true,
+            get: function() { return this._$flutterLoader; },
+            set: function(loader) {
+              this._$flutterLoader = loader;
+              const origLoad = loader.load.bind(loader);
+              loader.load = function(args) {
+                args = args || {};
+                args.config = Object.assign(args.config || {}, {
+                  canvasKitBaseUrl: 'canvaskit/',
+                  // 字体回退 URL，使用 VPS 反向代理转发到 loli.net
+                  // Cloudflare Functions 函数也有代理
+                  // fontFallbackBaseUrl: 'https://gstatic.loli.net/s/',
+                  fontFallbackBaseUrl: '/open/fonts/',
+                });
+                return origLoad(args);
+              };
+            },
+          });
+        } else {
+          // 合并新属性到已有对象
+          Object.assign(this._$flutter, v);
+        }
+      },
+    });
+  </script>
+
+
+
+  <!-- HLS.js: Web 端播放 HLS 视频流（video_player_web_hls 插件需要） -->
+  <!-- <script src="https://cdn.bootcdn.net/ajax/libs/hls.js/1.6.13/hls.min.js"></script> -->
+  <script src="hls.min.js"></script>
+
+  <style>
+    html {
+      height: 100%
+    }
+
+    body {
+      margin: 0;
+      min-height: 100%;
+      background-color: #ffffff;
+    }
+
+    .loader-container {
+      margin: 0;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      -ms-transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .loader {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #0175C2;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .loader-text {
+      margin-top: 20px;
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      color: #666;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+  <script id="splash-screen-script">
+    function removeSplashFromWeb() {
+      document.getElementById("splash")?.remove();
+      document.getElementById("splash-branding")?.remove();
+    }
+  </script>
+</head>
+<body>
+  <div id="splash" class="loader-container">
+    <div class="loader"></div>
+    <div class="loader-text">加载中...</div>
+  </div>
+
+  <!-- 带版本号：flutter_bootstrap.js 是"选择 wasm 还是 js"的引导器，
+       文件名不带 hash，一旦被浏览器/边缘以 immutable 缓存，
+       发版后访客会长期停留在旧的 dart2js 构建。每次发版改一下 v= 即可。 -->
+  <script src="flutter_bootstrap.js" async=""></script>
+
+  <script>
+    window.addEventListener('load', function() {
+      setTimeout(removeSplashFromWeb, 1000);
+    });
+  </script>
+
+</body></html>

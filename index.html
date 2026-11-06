@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>瞬乐</title>
+
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="shortcut icon" type="image/png" href="/favicon.png" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .video-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom,
+                    rgba(0, 0, 0, 0.3) 0%,
+                    rgba(0, 0, 0, 0.1) 50%,
+                    rgba(0, 0, 0, 0.7) 100%);
+            z-index: 2;
+        }
+
+        .content {
+            position: relative;
+            z-index: 3;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding-top: 40px;
+        }
+
+        .app-title {
+            color: #fff;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .app-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .download-section {
+            padding-bottom: 40px;
+        }
+
+        .download-btn {
+            width: 100%;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 30px;
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
+        }
+
+        .download-btn:active {
+            transform: translateY(0);
+        }
+
+        .download-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .download-btn:hover::before {
+            left: 100%;
+        }
+
+        .download-icon {
+            margin-right: 8px;
+            font-size: 20px;
+        }
+
+        .features {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .feature-item {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            margin: 4px 0;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .loading.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            color: #fff;
+            font-size: 16px;
+        }
+
+        /* 移动端优化 */
+        @media (max-width: 768px) {
+            .app-title {
+                font-size: 24px;
+            }
+
+            .app-subtitle {
+                font-size: 14px;
+            }
+
+            .download-btn {
+                height: 56px;
+                font-size: 16px;
+            }
+        }
+
+        /* 横屏适配 */
+        @media (orientation: landscape) {
+            .header {
+                padding-top: 20px;
+            }
+
+            .download-section {
+                padding-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <video class="video-background" autoplay muted loop playsinline>
+            <source src="https://apks.slkk.dpdns.org/apks/xc.mp4" type="video/mp4">
+        </video>
+
+        <div class="overlay"></div>
+
+        <div class="content">
+            <div class="header">
+                <h1 class="app-title">瞬乐APP</h1>
+                <p class="app-subtitle">海量影视，精彩不断</p>
+            </div>
+
+            <div class="features">
+                <div class="feature-item">✨ 海量影视资源</div>
+                <div class="feature-item">🎬 高清画质体验</div>
+                <div class="feature-item">📱 流畅播放体验</div>
+                <div class="feature-item">🆓 免费观看</div>
+            </div>
+
+            <div class="download-section" style="display: flex; gap: 16px;">
+                <button id="btn-android" class="download-btn" style="flex:1;" onclick="downloadApp()">
+                    <span class="download-icon">📱</span>
+                    下载APP
+                </button>
+                <button class="download-btn"
+                    style="flex:1; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"
+                    onclick="onlineExperience()">
+                    <span class="download-icon">🌐</span>
+                    在线体验
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div class="loading-text">正在下载...</div>
+    </div>
+
+    <script>
+        // 从 URL 提取邀请码并存入剪贴板
+        (function() {
+            const params = new URLSearchParams(window.location.search);
+            const inviteCode = params.get('invite');
+            if (inviteCode) {
+                setTimeout(function() {
+                    const banner = document.createElement('div');
+                    banner.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(33,150,243,0.95);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3);max-width:90%;text-align:center;cursor:pointer;';
+                    banner.innerHTML = '📋 点击复制邀请码<br><span style="font-size:12px;opacity:0.9;">下载注册后，双方各得积分奖励</span>';
+                    banner.addEventListener('click', function() {
+                        banner.innerHTML = '⏳ 复制中...';
+                        copyToClipboard(inviteCode, function(success, errMsg) {
+                            if (success) {
+                                banner.innerHTML = '✅ 已复制到剪贴板';
+                                banner.style.background = 'rgba(76,175,80,0.95)';
+                                setTimeout(function() { banner.remove(); }, 2000);
+                            } else {
+                                banner.innerHTML = '❌ 复制失败' + (errMsg ? '：' + errMsg : '，请手动复制');
+                                banner.style.background = 'rgba(244,67,54,0.95)';
+                            }
+                        });
+                    });
+                    document.body.appendChild(banner);
+                    setTimeout(function() { banner.remove(); }, 20000);
+                }, 500);
+            }
+
+            function copyToClipboard(text, callback) {
+                fallbackCopy(text, callback);
+            }
+
+            function fallbackCopy(text, callback) {
+                try {
+                    var textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    textarea.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;padding:0;border:none;outline:none;box-shadow:none;background:transparent;opacity:0.01;';
+                    document.body.appendChild(textarea);
+                    textarea.focus();
+                    textarea.select();
+                    var ok = false;
+                    try { ok = document.execCommand('copy'); } catch(e) {}
+                    document.body.removeChild(textarea);
+                    callback(ok, ok ? null : 'execCommand失败');
+                } catch(e) {
+                    callback(false, e.message || '未知错误');
+                }
+            }
+        })();
+
+        function getOS() {
+            const ua = navigator.userAgent;
+            if (/android/i.test(ua)) return 'Android';
+            if (/iPhone|iPad|iPod/i.test(ua)) return 'iOS';
+            if (/Windows NT/i.test(ua)) return 'Windows';
+            if (/Macintosh/i.test(ua)) return 'MacOS';
+            if (/Linux/i.test(ua)) return 'Linux';
+            return 'Other';
+        };
+        let userIpInfo = null;
+        fetch('https://aksl.dpdns.org/ip-api/get')
+            .then(res => res.json())
+            .then(data => {
+                console.log(data['data'])
+                const addjson = data['data'];
+                userIpInfo = {
+                    ip: addjson.ip,
+                    addr: addjson.country + addjson.prov + addjson.city
+                };
+                // 页面访问埋点
+                sendAnalytics('web_view', {
+                    page: location.pathname,
+                    ...userIpInfo
+                });
+            })
+        let appDownloadUrl = 'https://apks.slkk.dpdns.org/apks/shunle_5.1.0_20261025.apk';
+        fetch('https://slkk.dpdns.org/api/versions/latest')
+            .then(res => res.json())
+            .then(data => {
+                if (data.downloadUrl) {
+                    appDownloadUrl = data.downloadUrl;
+                }
+            })
+            .catch(err => console.log('获取下载链接失败', err));
+
+        // 下载应用
+        function downloadApp() {
+            const loading = document.getElementById('loading');
+            const downloadBtn = document.getElementById('btn-android');
+            const originalHtml = downloadBtn.innerHTML;
+
+            // 显示加载动画
+            loading.classList.add('show');
+            downloadBtn.disabled = true;
+            downloadBtn.innerHTML = '<span class="download-icon">⏳</span>下载中...';
+
+            // 创建下载链接
+            const link = document.createElement('a');
+            link.href = appDownloadUrl;
+            link.download = 'shunle.apk';
+            link.style.display = 'none';
+
+            // 添加到页面并触发下载
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // 3秒后隐藏加载动画
+            setTimeout(() => {
+                loading.classList.remove('show');
+                downloadBtn.disabled = false;
+                downloadBtn.innerHTML = originalHtml;
+            }, 3000);
+            sendAnalytics('button_click', {
+                button: 'download_android',
+                page: location.pathname,
+                ...userIpInfo
+            });
+        };
+        function onlineExperience() {
+            window.location.href = 'https://aksl.dpdns.org/open/';
+        };
+        function formatDate(date) {
+            return date.getFullYear() + '-' +
+                pad(date.getMonth() + 1) + '-' +
+                pad(date.getDate()) + ' ' +
+                pad(date.getHours()) + ':' +
+                pad(date.getMinutes()) + ':' +
+                pad(date.getSeconds());
+        }
+        function pad(n) {
+            return n < 10 ? '0' + n : n.toString();
+        }
+        function sendAnalytics(event, data) {
+            fetch('https://slkk.dpdns.org/api/savedevice', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event: event, // 事件名，如 page_view、button_click
+                    firstUseTime: formatDate(new Date()),
+                    ipAddress: data.ip,
+                    address: data.addr,
+                    platform: getOS(),
+                    additionalData: JSON.stringify(data)
+                })
+            }).catch(function (err) {
+                // 可以做失败重试或本地存储
+                console.log('埋点上报失败', err);
+            });
+        }
+
+        // 页面加载完成后自动播放视频
+        document.addEventListener('DOMContentLoaded', function () {
+            const video = document.querySelector('.video-background');
+            video.play().catch(function (error) {
+                console.log('Video auto-play failed:', error);
+            });
+        });
+
+        // 防止页面滚动
+        document.addEventListener('touchmove', function (e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        // 防止双击缩放
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
+</body>
+
+</html>
