@@ -775,7 +775,7 @@ case 2:return A.q(s.at(-1),v)}})
 return A.t($async$yn,v)},
 aA_(d){var w=d.toLowerCase()
 A.a9().$1("\ud83c\udfac [\u64ad\u653e\u5668] _guessVideoFormat \u68c0\u67e5 URL: "+d)
-if(C.c.kh(w,"m3u8")||C.c.t(w,"m3u8?")||C.c.t(w,"/txt")||C.c.t(w,"/ts")){A.a9().$1("\ud83c\udfac [\u64ad\u653e\u5668] \u63a8\u65ad\u4e3a HLS \u683c\u5f0f")
+if(C.c.jv(w,"m3u8")||C.c.t(w,"m3u8?")||C.c.t(w,"/txt")||C.c.t(w,"/ts")){A.a9().$1("\ud83c\udfac [\u64ad\u653e\u5668] \u63a8\u65ad\u4e3a HLS \u683c\u5f0f")
 return C.qM}A.a9().$1("\ud83c\udfac [\u64ad\u653e\u5668] \u4e0d\u6307\u5b9a\u683c\u5f0f hint\uff0c\u8ba9 ExoPlayer \u81ea\u52a8\u5224\u65ad")
 return null},
 MY(){var w=this.as
@@ -1343,4 +1343,4 @@ D.iz=new B.I6(0,"idle")
 D.iA=new B.I6(1,"loading")
 D.p4=new B.I6(2,"error")
 D.ak6=new A.tv(5,12,12,1.2)})()};
-(a=>{a["nYcI52WgZXnmp0FZ5hxcEH5efCc="]=a.current})($__dart_deferred_initializers__);
+(a=>{a["cOgMLJmkx795Uh1No6AxMqQ8mN8="]=a.current})($__dart_deferred_initializers__);
