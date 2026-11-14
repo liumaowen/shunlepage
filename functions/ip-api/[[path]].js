@@ -17,7 +17,10 @@ export async function onRequest({ request, params, env }) {
   }
 
   // 获取客户端真实 IP（Cloudflare 自动添加）
-  const clientIP = request.headers.get('CF-Connecting-IP');
+  // const clientIP = request.headers.get('CF-Connecting-IP');
+  const clientIP = request.headers.get('X-Forwarded-For') 
+              || request.headers.get('X-Real-IP')
+              || request.headers.get('CF-Connecting-IP');
   const pathname = pathParts.join('/');
 
   if (pathname === 'get' && clientIP) {
