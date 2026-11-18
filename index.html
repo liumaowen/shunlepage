@@ -325,7 +325,7 @@
                 };
                 // 页面访问埋点
                 sendAnalytics('web_view', {
-                    page: location.pathname,
+                    page: location.hostname,
                     ...userIpInfo
                 });
             })
@@ -369,7 +369,7 @@
             }, 3000);
             sendAnalytics('button_click', {
                 button: 'download_android',
-                page: location.pathname,
+                page: location.hostname,
                 ...userIpInfo
             });
         };
