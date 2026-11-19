@@ -32,8 +32,10 @@
 
   <!-- 预加载关键资源：加速首次渲染 -->
   <link rel="preload" href="flutter_bootstrap.js" as="script">
-  <link rel="preload" href="hls.min.js" as="script">
-  <link rel="preload" href="assets/assets/fonts/NotoSansSC-Regular-gb2312.ttf" as="font" type="font/ttf" crossorigin>
+  <!-- <link rel="preload" href="hls.min.js" as="script"> -->
+  <link rel="preload" href="https://cdnjs.webstatic.cn/ajax/libs/hls.js/1.7.4/hls.min.js" as="script">
+  <link rel="preload" href="assets/assets/fonts/NotoSansSC-Regular-gb2312.ttf" as="fetch" type="font/ttf" crossorigin>
+  <link rel="preconnect" href="https://font.webstatic.cn" crossorigin>
 
   <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
 
@@ -57,10 +59,14 @@
                 args = args || {};
                 args.config = Object.assign(args.config || {}, {
                   canvasKitBaseUrl: 'canvaskit/',
-                  // 字体回退 URL，使用 VPS 反向代理转发到 loli.net
-                  // Cloudflare Functions 函数也有代理
+                  // fontFallbackBaseUrl: '/open/fonts/',
                   // fontFallbackBaseUrl: 'https://gstatic.loli.net/s/',
-                  fontFallbackBaseUrl: '/open/fonts/',
+
+                  // 字体回退走国内镜像 font.webstatic.cn（Web缓存网 https://www.webcache.cn/）
+                  // 路径映射：/google/<family>/<version>/<file> -> fonts.gstatic.com/s/
+                  // 实测比 gstatic.loli.net 快 10~30 倍；注意该镜像有防盗链，请求必须带 Referer。
+                  // 兜底方案（如需回滚）：'/open/fonts/' —— Cloudflare Function 反向代理
+                  fontFallbackBaseUrl: 'https://font.webstatic.cn/google/',
                 });
                 return origLoad(args);
               };
@@ -78,7 +84,8 @@
 
   <!-- HLS.js: Web 端播放 HLS 视频流（video_player_web_hls 插件需要） -->
   <!-- <script src="https://cdn.bootcdn.net/ajax/libs/hls.js/1.6.13/hls.min.js"></script> -->
-  <script src="hls.min.js" defer></script>
+  <!-- <script src="hls.min.js" defer></script> -->
+  <script src="https://cdnjs.webstatic.cn/ajax/libs/hls.js/1.7.4/hls.min.js" defer></script>
 
   <style>
     html {
