@@ -11,6 +11,12 @@
   Cache-Control: public, max-age=31536000, immutable
 
 # ---- 字体资源：长缓存 + CORS ----
+# 注意：Flutter 会把 pubspec 里的声明路径再套一层 assets/，
+# 实际部署路径是 /assets/assets/fonts/xxx，所以下面两条都保留以防路径变化。
+/open/assets/assets/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+  Access-Control-Allow-Origin: *
+
 /open/assets/fonts/*
   Cache-Control: public, max-age=31536000, immutable
   Access-Control-Allow-Origin: *
