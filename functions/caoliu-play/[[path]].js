@@ -11,8 +11,8 @@
  */
 
 const DEFAULT_UPSTREAM = 'https://videos.yngte.com:65443';
-const DEFAULT_REFERER_DOMAIN = 'https://adt3fqzvg.110367.cc';
-const DEFAULT_PRIVATE_KEY = '3q6yv6Ra1aex8i56HRO2IwCCTPg2Y1Bk';
+const DEFAULT_REFERER_DOMAIN = 'https://cqihhj842.938674.online';
+const DEFAULT_PRIVATE_KEY = 'zH3JDuCRXVGa3na7xbOqpx1bw6DAkbTP';
 
 // 生成随机十六进制字符串
 function generateRand(length = 32) {
@@ -58,8 +58,14 @@ export async function onRequest({ request, params, env }) {
     return new Response('Missing path after /caoliu-play/', { status: 400 });
   }
 
-  // 上游域名：请求头 > 环境变量 > 默认值
-  const upstream = request.headers.get('x-upstream-origin')
+  const url = new URL(request.url);
+  const queryUpstream = url.searchParams.get('x-upstream-origin');
+  const queryReferer = url.searchParams.get('x-referer-domain');
+  const queryPrivateKey = url.searchParams.get('x-private-key');
+
+  // 上游域名：查询参数（供 video/m3u8 子请求使用） > 请求头 > 环境变量 > 默认值
+  const upstream = queryUpstream
+    || request.headers.get('x-upstream-origin')
     || env.CAOLIU_UPSTREAM_ORIGIN
     || DEFAULT_UPSTREAM;
   const baseUpstream = upstream.replace(/\/$/, '');
@@ -83,19 +89,39 @@ export async function onRequest({ request, params, env }) {
     );
   }
 
+  // 只允许草榴视频 CDN，避免变成任意站点开放代理
+  const upstreamName = new URL(baseUpstream).hostname;
+  const allowed = env.CAOLIU_PLAY_ALLOWED
+    ? String(env.CAOLIU_PLAY_ALLOWED).split(',').map((item) => item.trim()).filter(Boolean)
+    : [];
+  const isAllowed = allowed.length > 0
+    ? allowed.includes(upstreamName)
+    : /^(.+\.)?yngte\.com$/i.test(upstreamName);
+  if (!isAllowed) {
+    return new Response('Upstream not allowed', {
+      status: 403,
+      headers: { 'Access-Control-Allow-Origin': '*' },
+    });
+  }
+
   const upstreamPath = `${baseUpstream}/${pathParts.join('/')}`;
 
-  // 动态 referer 域名：请求头 > 环境变量 > 默认值
-  const refererDomain = request.headers.get('x-referer-domain')
+  // 动态 referer 域名：查询参数 > 请求头 > 环境变量 > 默认值
+  const refererDomain = queryReferer
+    || request.headers.get('x-referer-domain')
     || env.REFERER_DOMAIN
     || DEFAULT_REFERER_DOMAIN;
 
-  // 拼接查询参数
-  const url = new URL(request.url);
-  let upstreamUrl = url.search ? `${upstreamPath}${url.search}` : upstreamPath;
+  // 拼接查询参数（代理控制参数不下发）
+  let upstreamUrl = `${upstreamPath}`;
+  url.searchParams.delete('x-upstream-origin');
+  url.searchParams.delete('x-referer-domain');
+  url.searchParams.delete('x-private-key');
+  if (url.search) upstreamUrl += url.search;
 
   // 关键：为请求添加 CDN 签名
-  const privateKey = request.headers.get('x-private-key')
+  const privateKey = queryPrivateKey
+    || request.headers.get('x-private-key')
     || DEFAULT_PRIVATE_KEY;
   upstreamUrl = await appendAuthParam(upstreamUrl,privateKey);
 
@@ -151,18 +177,37 @@ export async function onRequest({ request, params, env }) {
     // 计算当前 m3u8 的目录路径（用于解析相对路径）
     const currentPath = '/' + pathParts.join('/');
     const dirPath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
+    const control = new URLSearchParams({
+      'x-upstream-origin': baseUpstream,
+      'x-referer-domain': refererDomain,
+      'x-private-key': privateKey,
+    }).toString();
 
-    // 替换 m3u8 中的相对路径为代理路径
-    // 例如：h264/1500kb/0001.ts → /caoliu-play/voss/trans-free-video/.../h264/1500kb/0001.ts
-    m3u8Content = m3u8Content.replace(/^(?!#)(.+)$/gm, (match, line) => {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#')) return line;
-      // 已经是完整 URL 的情况
-      if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return line;
-      // 相对路径：拼接当前目录路径，返回代理路径
-      const fullPath = dirPath + trimmed;
-      return `/caoliu-play${fullPath}`;
-    });
+    const proxyUri = (uri) => {
+      if (/^https?:\/\//.test(uri)) return uri;
+      const fullPath = uri.startsWith('/') ? uri : dirPath + uri;
+      return `/caoliu-play${fullPath}${fullPath.includes('?') ? '&' : '?'}${control}`;
+    };
+
+    // 替换 m3u8 中的相对路径为代理路径，并带上上游控制参数，
+    // 否则子清单/切片会回落到默认旧域名和旧 key。
+    m3u8Content = m3u8Content
+      .split('\n')
+      .map((line) => {
+        const trimmed = line.trim();
+        if (!trimmed) return line;
+        if (trimmed.startsWith('#')) {
+          if (trimmed.includes('URI="')) {
+            return trimmed.replace(/URI="([^"]+)"/g, (_m, uri) => `URI="${proxyUri(uri)}"`);
+          }
+          return line;
+        }
+        return proxyUri(trimmed);
+      })
+      .join('\n');
+
+    responseHeaders.set('content-type', 'application/vnd.apple.mpegurl');
+    responseHeaders.delete('content-length');
 
     return new Response(m3u8Content, {
       status: 200,

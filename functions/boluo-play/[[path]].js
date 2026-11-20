@@ -10,8 +10,8 @@
  *   3. 默认值（兜底）
  */
 
-const DEFAULT_UPSTREAM = 'https://bltenvpic.0852w.com';
-const DEFAULT_REFERER_DOMAIN = 'https://g5vhof2p7u1k.s0l1gkhpbl.cc';
+const DEFAULT_UPSTREAM = 'https://bltenvpic.bfjfwj.cn';
+const DEFAULT_REFERER_DOMAIN = 'https://4optqx5wc17g.swizmpfobl.cc';
 
 export async function onRequest({ request, params, env }) {
   const pathParts = params.path || [];
@@ -19,8 +19,13 @@ export async function onRequest({ request, params, env }) {
     return new Response('Missing path after /boluo-play/', { status: 400 });
   }
 
-  // 动态上游域名：请求头 > 环境变量 > 默认值
-  const upstream = request.headers.get('x-upstream-origin')
+  const url = new URL(request.url);
+  const queryUpstream = url.searchParams.get('x-upstream-origin');
+  const queryReferer = url.searchParams.get('x-referer-domain');
+
+  // 动态上游域名：查询参数（供 <video> 使用） > 请求头 > 环境变量 > 默认值
+  const upstream = queryUpstream
+    || request.headers.get('x-upstream-origin')
     || env.UPSTREAM_ORIGIN
     || DEFAULT_UPSTREAM;
   const baseUpstream = upstream.replace(/\/$/, '');
@@ -46,13 +51,15 @@ export async function onRequest({ request, params, env }) {
 
   const upstreamPath = `${baseUpstream}/${pathParts.join('/')}`;
 
-  // 动态 referer 域名：请求头 > 环境变量 > 默认值
-  const refererDomain = request.headers.get('x-referer-domain')
+  // 动态 referer 域名：查询参数 > 请求头 > 环境变量 > 默认值
+  const refererDomain = queryReferer
+    || request.headers.get('x-referer-domain')
     || env.REFERER_DOMAIN
     || DEFAULT_REFERER_DOMAIN;
 
-  // 把原始请求的查询参数拼到上游 URL
-  const url = new URL(request.url);
+  // 把原始请求的查询参数拼到上游 URL，代理控制参数不下发
+  url.searchParams.delete('x-upstream-origin');
+  url.searchParams.delete('x-referer-domain');
   const upstreamUrl = url.search ? `${upstreamPath}${url.search}` : upstreamPath;
 
   // 构造请求头
@@ -105,6 +112,43 @@ export async function onRequest({ request, params, env }) {
 
   const responseHeaders = new Headers(upstreamResponse.headers);
   responseHeaders.set('Access-Control-Allow-Origin', '*');
+
+  const contentType = upstreamResponse.headers.get('content-type') || '';
+  const isPlaylist = contentType.includes('mpegurl') || upstreamUrl.split('?')[0].endsWith('.m3u8');
+
+  // HLS 子请求（切片/密钥）不会带上播放列表里的查询参数，这里把代理控制参数写进播放列表每一行，
+  // 否则切片会回落到默认上游域名并被防盗链拦截（403）。
+  if (isPlaylist && upstreamResponse.ok) {
+    const control = new URLSearchParams({
+      'x-upstream-origin': baseUpstream,
+      'x-referer-domain': refererDomain,
+    }).toString();
+    const text = await upstreamResponse.text();
+    const rewritten = text
+      .split('\n')
+      .map((line) => {
+        const trimmed = line.trim();
+        if (!trimmed) return line;
+        if (trimmed.startsWith('#')) {
+          if (trimmed.startsWith('#EXT-X-KEY') && trimmed.includes('URI="')) {
+            return trimmed.replace(/URI="([^"]+)"/, (_m, uri) => {
+              if (/^https?:\/\//.test(uri)) return `URI="${uri}"`;
+              return `URI="${uri}${uri.includes('?') ? '&' : '?'}${control}"`;
+            });
+          }
+          return line;
+        }
+        if (/^https?:\/\//.test(trimmed)) return line;
+        return `${line}${trimmed.includes('?') ? '&' : '?'}${control}`;
+      })
+      .join('\n');
+    responseHeaders.set('content-type', 'application/vnd.apple.mpegurl');
+    responseHeaders.delete('content-length');
+    return new Response(rewritten, {
+      status: upstreamResponse.status,
+      headers: responseHeaders,
+    });
+  }
 
   return new Response(upstreamResponse.body, {
     status: upstreamResponse.status,

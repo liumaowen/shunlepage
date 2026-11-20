@@ -20,8 +20,13 @@ export async function onRequest({ request, params, env }) {
     return new Response('Missing path after /boluo-img/', { status: 400 });
   }
 
-  // 动态上游域名：请求头 > 环境变量 > 默认值
-  const upstream = request.headers.get('x-upstream-origin')
+  const url = new URL(request.url);
+  const queryUpstream = url.searchParams.get('x-upstream-origin');
+  const queryReferer = url.searchParams.get('x-referer-domain');
+
+  // 动态上游域名：查询参数（供 <img> 使用） > 请求头 > 环境变量 > 默认值
+  const upstream = queryUpstream
+    || request.headers.get('x-upstream-origin')
     || env.UPSTREAM_ORIGIN
     || DEFAULT_UPSTREAM;
   const baseUpstream = upstream.replace(/\/$/, '');
@@ -47,13 +52,15 @@ export async function onRequest({ request, params, env }) {
 
   const upstreamPath = `${baseUpstream}/${pathParts.join('/')}`;
 
-  // 动态 referer 域名：请求头 > 环境变量 > 默认值
-  const refererDomain = request.headers.get('x-referer-domain')
+  // 动态 referer 域名：查询参数 > 请求头 > 环境变量 > 默认值
+  const refererDomain = queryReferer
+    || request.headers.get('x-referer-domain')
     || env.REFERER_DOMAIN
     || DEFAULT_REFERER_DOMAIN;
 
-  // 把原始请求的查询参数拼到上游 URL（如 ?sign=xxx&t=xxx）
-  const url = new URL(request.url);
+  // 把原始请求的查询参数拼到上游 URL（如 ?sign=xxx&t=xxx），代理控制参数不下发
+  url.searchParams.delete('x-upstream-origin');
+  url.searchParams.delete('x-referer-domain');
   const upstreamUrl = url.search ? `${upstreamPath}${url.search}` : upstreamPath;
 
   // 构造请求头
