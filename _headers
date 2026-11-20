@@ -1,43 +1,31 @@
-# ---- HTML：边缘缓存 1 小时，浏览器每次校验 ----
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https:; font-src 'self' data: https:; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+
+# Vite 产物部署在 /open/ 子目录下，缓存规则与 Flutter 版本保持同一口径
 /open/
   Cache-Control: public, max-age=0, s-maxage=3600
 
 /open/index.html
   Cache-Control: public, max-age=0, s-maxage=3600
 
-# ---- 引擎运行时（canvaskit / skwasm / skwasm_heavy / chromium）----
-# 随 Flutter SDK 版本变化，可长缓存
-/open/canvaskit/*
-  Cache-Control: public, max-age=31536000, immutable
-
-# ---- 第三方库与静态资源 ----
-/open/hls.min.js
-  Cache-Control: public, max-age=604800
-
+# 带 hash 的静态资源可长缓存
 /open/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+  Access-Control-Allow-Origin: *
+
+/open/favicon.png
   Cache-Control: public, max-age=604800
 
-# ---- 版本探测与 Service Worker：必须实时 ----
+/open/icons/*
+  Cache-Control: public, max-age=604800
+
+/open/manifest.json
+  Cache-Control: public, max-age=604800
+
+# 版本探测与入口文件必须实时
 /open/version.json
   Cache-Control: no-store
-
-/open/flutter_service_worker.js
-  Cache-Control: no-store
-
-# ---- 应用主程序：文件名不带 hash，禁止长缓存 ----
-# main.dart.wasm / main.dart.mjs 为 wasm 构建新增，
-# 若缓存一年，发版后用户一年都拿不到新版本。
-/open/main.dart.js
-  Cache-Control: public, max-age=300
-
-/open/main.dart.mjs
-  Cache-Control: public, max-age=300
-
-/open/main.dart.wasm
-  Cache-Control: public, max-age=300
-
-/open/flutter_bootstrap.js
-  Cache-Control: public, max-age=300
-
-/open/flutter.js
-  Cache-Control: public, max-age=300

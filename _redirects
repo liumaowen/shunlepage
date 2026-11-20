@@ -1,0 +1,25 @@
+/  /open/  302
+
+/open/recommend /open/ 200
+/open/collection /open/ 200
+/open/ai-drama /open/ 200
+/open/manhua /open/ 200
+/open/profile /open/ 200
+
+/open/video/* /open/ 200
+/open/drama /open/ 200
+/open/drama/* /open/ 200
+/open/manhua-all /open/ 200
+/open/manhua-ranking /open/ 200
+/open/manhua-detail/* /open/ 200
+/open/manhua-reader/* /open/ 200
+/open/category /open/ 200
+
+/open/caoliu /open/ 200
+/open/caoliu-entry /open/ 200
+/open/search /open/ 200
+/open/login /open/ 200
+/open/membership /open/ 200
+/open/points /open/ 200
+/open/history /open/ 200
+/open/content /open/ 200
