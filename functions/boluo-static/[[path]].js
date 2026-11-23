@@ -13,7 +13,9 @@
  *   3. 默认值（兜底）
  */
 
-const DEFAULT_UPSTREAM = 'https://bltsta.0852w.com';
+// 当前可用上游；bltsta.0852w.com 已返回 423 Locked，不能再作为默认值
+const DEFAULT_UPSTREAM = 'https://bltsta.bfjfwj.cn';
+const FALLBACK_UPSTREAM = 'https://bltsta.bfjfwj.cn';
 const DEFAULT_REFERER_DOMAIN = 'https://g5vhof2p7u1k.s0l1gkhpbl.cc';
 
 export async function onRequest({ request, params, env }) {
@@ -47,15 +49,13 @@ export async function onRequest({ request, params, env }) {
     );
   }
 
-  const upstreamUrl = `${baseUpstream}/${pathParts.join('/')}`;
-
   // 动态 referer 域名：请求头 > 环境变量 > 默认值
   const refererDomain = request.headers.get('x-referer-domain')
     || env.REFERER_DOMAIN
     || DEFAULT_REFERER_DOMAIN;
 
   console.log('[boluo-static] path:', pathParts.join('/'));
-  console.log('[boluo-static] upstream:', upstreamUrl);
+  console.log('[boluo-static] upstream:', baseUpstream);
 
   // 构造请求头
   const headers = new Headers();
@@ -96,13 +96,31 @@ export async function onRequest({ request, params, env }) {
 
   console.log('[boluo-static] referer:', referer, 'origin:', origin);
 
-  // 发送请求到上游
-  const upstreamResponse = await fetch(upstreamUrl, {
-    method: 'GET',
-    headers,
-  });
+  // 发送请求到上游；主上游被锁/不可用时回退到当前可用域名
+  const upstreamCandidates = [...new Set([baseUpstream, FALLBACK_UPSTREAM])];
+  let upstreamResponse = null;
+  let finalUpstream = baseUpstream;
+  for (const candidate of upstreamCandidates) {
+    finalUpstream = candidate;
+    try {
+      const response = await fetch(`${candidate}/${pathParts.join('/')}`, {
+        method: 'GET',
+        headers,
+      });
+      upstreamResponse = response;
+      const needFallback =
+        response.status === 423 ||
+        response.status === 403 ||
+        response.status >= 500;
+      if (!needFallback || candidate === upstreamCandidates.at(-1)) break;
+      console.warn('[boluo-static] 上游异常，尝试回退:', candidate, response.status);
+    } catch (error) {
+      console.warn('[boluo-static] 上游请求异常，尝试回退:', candidate, error);
+      if (candidate === upstreamCandidates.at(-1)) throw error;
+    }
+  }
 
-  console.log('[boluo-static] upstream status:', upstreamResponse.status);
+  console.log('[boluo-static] upstream:', finalUpstream, 'status:', upstreamResponse.status);
 
   // 构建响应
   const responseHeaders = new Headers(upstreamResponse.headers);
